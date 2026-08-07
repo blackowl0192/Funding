@@ -14,9 +14,23 @@ from funding_terminal.domain.errors import FundingTerminalError
 from funding_terminal.domain.models import DashboardStats, TradingSettings
 from funding_terminal.exchange.binance.client import BinancePublicClient
 from funding_terminal.main import setup_logging
+from funding_terminal.repositories.funding_repository import (
+    FundingCurrentRepository,
+    FundingEventRepository,
+    FundingStatisticsRepository,
+    FundingSyncRepository,
+)
 from funding_terminal.repositories.import_repository import ImportRepository
 from funding_terminal.repositories.settings_repository import SettingsRepository
 from funding_terminal.repositories.symbol_repository import SymbolRepository
+from funding_terminal.services.funding_service import (
+    FundingAnalyticsService,
+    FundingCurrentService,
+    FundingHistoryService,
+    FundingReportService,
+    FundingSyncService,
+    format_funding_report_lines,
+)
 from funding_terminal.services.import_service import ImportService
 from funding_terminal.services.settings_service import format_decimal
 from funding_terminal.services.universe_service import UniverseService
@@ -63,6 +77,20 @@ def _build_parser() -> argparse.ArgumentParser:
     import_parser.add_argument("path")
     subparsers.add_parser("refresh-universe")
     subparsers.add_parser("status")
+    sync_funding_parser = subparsers.add_parser("sync-funding")
+    sync_funding_parser.add_argument("--days", type=int, default=30)
+    sync_funding_parser.add_argument("--symbols", default="")
+    sync_funding_parser.add_argument("--current-only", action="store_true")
+    sync_funding_parser.add_argument("--history-only", action="store_true")
+    subparsers.add_parser("funding-status")
+    funding_report_parser = subparsers.add_parser("funding-report")
+    funding_report_parser.add_argument("--window", type=int, choices=[7, 14, 30], default=14)
+    funding_report_parser.add_argument("--limit", type=int, default=20)
+    funding_report_parser.add_argument(
+        "--sort",
+        choices=["stability", "mean", "cumulative"],
+        default="stability",
+    )
     return parser
 
 
@@ -106,6 +134,12 @@ async def _run_async(args: argparse.Namespace, settings: Settings) -> int:
             entries = await UniverseService(SymbolRepository(db), client).refresh_universe()
             print(f"refreshed_symbols: {len(entries)}")
             return 0
+        if args.command == "sync-funding":
+            return await _sync_funding(db, client, args)
+        if args.command == "funding-status":
+            return await _funding_status(db)
+        if args.command == "funding-report":
+            return await _funding_report(db, args)
         if args.command == "status":
             return await _status(db, client)
     finally:
@@ -143,6 +177,82 @@ def _read_import_file(path: Path) -> tuple[str, bytes]:
     if not path.exists() or not path.is_file():
         raise FileNotFoundError(path)
     return path.name, path.read_bytes()
+
+
+async def _sync_funding(
+    db: Database,
+    client: BinancePublicClient,
+    args: argparse.Namespace,
+) -> int:
+    if args.current_only and args.history_only:
+        print("error: --current-only and --history-only are mutually exclusive", file=sys.stderr)
+        return 2
+    if args.days < 1:
+        print("error: --days must be positive", file=sys.stderr)
+        return 2
+    service = _funding_sync_service(db, client)
+    result = await service.sync_funding_universe(
+        days=args.days,
+        symbols=_parse_symbol_list(args.symbols),
+        current_only=args.current_only,
+        history_only=args.history_only,
+    )
+    print(f"total: {result.total}")
+    print(f"success: {result.success}")
+    print(f"failed: {result.failed}")
+    print(f"events_inserted: {result.events_inserted}")
+    print(f"events_existing: {result.events_existing}")
+    print(f"statistics_updated: {result.statistics_updated}")
+    print(f"current_updated: {result.current_updated}")
+    for error in result.errors:
+        print(f"error {error.symbol}: {error.error}")
+    return 0 if result.failed == 0 else 1
+
+
+async def _funding_status(db: Database) -> int:
+    summary = await FundingReportService(
+        SettingsRepository(db),
+        FundingStatisticsRepository(db),
+        FundingSyncRepository(db),
+    ).status_summary()
+    print(f"tracked: {summary.tracked}")
+    print(f"history_synced: {summary.history_synced}")
+    print(f"failed: {summary.failed}")
+    print(f"current_positive: {summary.current_positive}")
+    print(f"current_negative: {summary.current_negative}")
+    print(f"stale: {summary.stale}")
+    print(f"last_sync: {summary.last_sync or 'never'}")
+    return 0
+
+
+async def _funding_report(db: Database, args: argparse.Namespace) -> int:
+    settings_repo = SettingsRepository(db)
+    settings = await settings_repo.get()
+    rows = await FundingReportService(
+        settings_repo,
+        FundingStatisticsRepository(db),
+        FundingSyncRepository(db),
+    ).table_rows(window_days=args.window, sort=args.sort, direction="desc", limit=args.limit)
+    for line in format_funding_report_lines(rows, quote_asset=settings.quote_asset):
+        print(line)
+    return 0
+
+
+def _funding_sync_service(db: Database, client: BinancePublicClient) -> FundingSyncService:
+    events = FundingEventRepository(db)
+    current = FundingCurrentRepository(db)
+    statistics = FundingStatisticsRepository(db)
+    sync_state = FundingSyncRepository(db)
+    analytics = FundingAnalyticsService(events, current, statistics)
+    history = FundingHistoryService(client, events, sync_state, analytics)
+    current_service = FundingCurrentService(client, current)
+    return FundingSyncService(sync_state, history, current_service)
+
+
+def _parse_symbol_list(raw_symbols: str) -> tuple[str, ...]:
+    if not raw_symbols.strip():
+        return ()
+    return tuple(symbol.strip().upper() for symbol in raw_symbols.split(",") if symbol.strip())
 
 
 async def _status(db: Database, client: BinancePublicClient) -> int:

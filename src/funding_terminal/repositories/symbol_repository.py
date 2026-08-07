@@ -22,6 +22,12 @@ SORT_COLUMNS = {
     "enabled": "enabled",
     "mapping_status": "mapping_status",
     "last_checked": "last_checked_at",
+    "funding_14d_mean": "COALESCE(fs14.mean_rate, 0)",
+    "funding_14d_positive_ratio": "COALESCE(fs14.positive_ratio, 0)",
+    "funding_14d_stability": "COALESCE(fs14.stability_score, 0)",
+    "funding_14d_cumulative": "COALESCE(fs14.cumulative_rate, 0)",
+    "funding_30d_estimate": "COALESCE(fs30.estimated_30d_rate, 0)",
+    "current_positive_streak": "COALESCE(fs14.current_positive_streak, 0)",
 }
 
 
@@ -113,6 +119,10 @@ class SymbolRepository:
                    exchange,
                    last_checked_at
             FROM symbols
+            LEFT JOIN funding_statistics fs14
+                ON fs14.symbol_id = symbols.id AND fs14.window_days = 14
+            LEFT JOIN funding_statistics fs30
+                ON fs30.symbol_id = symbols.id AND fs30.window_days = 30
             {where}
             ORDER BY {order_column} {order_direction}, base_asset ASC
             LIMIT ${len(params) + 1} OFFSET ${len(params) + 2}

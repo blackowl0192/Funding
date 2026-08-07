@@ -17,6 +17,18 @@
           <th>Futures Symbol</th>
           <th>Futures Status</th>
           <th>Eligible</th>
+          <th>Current/Last Funding</th>
+          <th>Next Funding</th>
+          <th>14d Average</th>
+          <th>14d Median</th>
+          <th>14d Positive %</th>
+          <th>Current Positive Streak</th>
+          <th>14d Cumulative</th>
+          <th>14d Stability Score</th>
+          <th>30d Funding Estimate %</th>
+          <th>30d Gross Funding Estimate</th>
+          <th>Data Quality</th>
+          <th>Last Updated</th>
           <th>Mapping Status</th>
           <th>Reason</th>
           <th>Last Checked</th>
@@ -25,6 +37,10 @@
       </thead>
       <tbody>
         {% for entry in symbols.entries %}
+          {% set funding = funding_by_asset.get(entry.base_asset) if funding_by_asset is defined else none %}
+          {% set stats14 = funding.statistics_14d if funding else none %}
+          {% set stats30 = funding.statistics_30d if funding else none %}
+          {% set current = funding.current if funding else none %}
           <tr class="{% if not entry.enabled %}disabled-row{% endif %}">
             <td>
               <span class="badge {% if entry.enabled %}ok{% else %}disabled{% endif %}">
@@ -41,6 +57,26 @@
                 {{ "YES" if entry.strategy_eligible else "NO" }}
               </span>
             </td>
+            <td class="{% if current and current.last_funding_rate and current.last_funding_rate > 0 %}positive{% elif current and current.last_funding_rate and current.last_funding_rate < 0 %}negative{% endif %}">
+              {{ current.last_funding_rate|rate if current else "-" }}
+            </td>
+            <td class="small-value">{{ current.next_funding_time|utc if current else "-" }}</td>
+            <td>{{ stats14.mean_rate|rate if stats14 else "-" }}</td>
+            <td>{{ stats14.median_rate|rate if stats14 else "-" }}</td>
+            <td>{{ stats14.positive_ratio|ratio if stats14 else "-" }}</td>
+            <td>{{ stats14.current_positive_streak|streak(stats14.funding_interval_hours) if stats14 else "-" }}</td>
+            <td>{{ stats14.cumulative_rate|rate if stats14 else "-" }}</td>
+            <td>{{ stats14.stability_score if stats14 else "-" }}</td>
+            <td>{{ stats30.estimated_30d_rate|rate if stats30 else "-" }}</td>
+            <td>{{ funding.gross_funding_estimate_30d|money(quote_asset) if funding else "-" }}</td>
+            <td>
+              {% if stats14 %}
+                <span class="badge quality {{ stats14.data_quality.value|lower }}">{{ stats14.data_quality.value }}</span>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td class="small-value">{{ stats14.calculated_at|utc if stats14 else "-" }}</td>
             <td><span class="badge status">{{ entry.mapping_status.value }}</span></td>
             <td class="reason">{{ entry.mapping_reason }}</td>
             <td class="small-value">{{ entry.last_checked_at or "-" }}</td>
@@ -63,11 +99,14 @@
                     hx-target="#symbols-table" hx-swap="outerHTML">
                 <button class="icon-button" type="submit" title="Refresh">Refresh</button>
               </form>
+              {% if entry.strategy_eligible and entry.enabled %}
+                <a class="icon-button" href="/funding/{{ entry.base_asset }}" title="Funding detail">Funding</a>
+              {% endif %}
             </td>
           </tr>
         {% else %}
           <tr>
-            <td colspan="11" class="empty-state">No symbols imported yet.</td>
+            <td colspan="23" class="empty-state">No symbols imported yet.</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -86,4 +125,3 @@
     </div>
   </footer>
 </section>
-

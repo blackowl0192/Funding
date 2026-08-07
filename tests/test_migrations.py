@@ -16,8 +16,9 @@ def test_discover_migrations_sorted_by_numeric_prefix(tmp_path: Path) -> None:
 def test_project_migrations_include_capital_and_fee_model() -> None:
     migrations = discover_migrations(Path("migrations"))
 
-    assert [migration.version for migration in migrations] == [1, 2]
+    assert [migration.version for migration in migrations] == [1, 2, 3]
     assert migrations[1].name == "002_capital_and_fee_model.sql"
+    assert migrations[2].name == "003_funding_analytics.sql"
 
 
 def test_capital_fee_migration_is_idempotent_sql() -> None:
@@ -27,3 +28,13 @@ def test_capital_fee_migration_is_idempotent_sql() -> None:
     assert "DROP COLUMN IF EXISTS spot_maker_fee" in sql
     assert "has_legacy_fee_columns" in sql
     assert "trading_settings_budget_within_total" in sql
+
+
+def test_funding_analytics_migration_creates_required_tables() -> None:
+    sql = Path("migrations/003_funding_analytics.sql").read_text(encoding="utf-8")
+
+    assert "CREATE TABLE IF NOT EXISTS funding_events" in sql
+    assert "CREATE TABLE IF NOT EXISTS funding_current" in sql
+    assert "CREATE TABLE IF NOT EXISTS funding_statistics" in sql
+    assert "CREATE TABLE IF NOT EXISTS funding_sync_state" in sql
+    assert "UNIQUE(source, futures_symbol, funding_time)" in sql

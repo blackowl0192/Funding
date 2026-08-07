@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}{{ symbol.base_asset }} Funding | Funding Arbitrage Terminal{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <div>
+    <p class="eyebrow">Symbol funding detail</p>
+    <h1>{{ symbol.base_asset }}</h1>
+  </div>
+  <div class="header-actions">
+    <a class="button secondary" href="/funding">Funding</a>
+    <form method="post" action="/funding/{{ symbol.base_asset }}/refresh">
+      <button class="button" type="submit">Refresh Funding</button>
+    </form>
+  </div>
+</header>
+
+{% if message %}
+  <div class="alert success">{{ message }}</div>
+{% endif %}
+{% if error %}
+  <div class="alert error">{{ error }}</div>
+{% endif %}
+
+<section class="metric-grid compact">
+  <article class="metric">
+    <span>Current/Last Funding</span>
+    <strong class="{% if current and current.last_funding_rate and current.last_funding_rate > 0 %}positive{% elif current and current.last_funding_rate and current.last_funding_rate < 0 %}negative{% endif %}">
+      {{ current.last_funding_rate|rate if current else "-" }}
+    </strong>
+  </article>
+  <article class="metric">
+    <span>Next Funding Time</span>
+    <strong class="small-value">{{ current.next_funding_time|utc if current else "-" }}</strong>
+  </article>
+  <article class="metric">
+    <span>Funding Interval</span>
+    <strong>{{ current.funding_interval_hours|decimal if current and current.funding_interval_hours else "-" }} h</strong>
+  </article>
+  <article class="metric">
+    <span>Mark Price</span>
+    <strong>{{ current.mark_price|decimal if current and current.mark_price else "-" }}</strong>
+  </article>
+  <article class="metric">
+    <span>Index Price</span>
+    <strong>{{ current.index_price|decimal if current and current.index_price else "-" }}</strong>
+  </article>
+  <article class="metric">
+    <span>Interest Rate</span>
+    <strong>{{ current.interest_rate|rate if current else "-" }}</strong>
+  </article>
+</section>
+
+<section class="metric-grid primary-window">
+  {% for window in [7, 14, 30] %}
+    {% set stats = stats_by_window.get(window) %}
+    <article class="metric">
+      <span>{{ window }}d Mean Funding</span>
+      <strong>{{ stats.mean_rate|rate if stats else "-" }}</strong>
+      <div class="muted small-value">Median {{ stats.median_rate|rate if stats else "-" }}</div>
+    </article>
+    <article class="metric">
+      <span>{{ window }}d Positive Ratio</span>
+      <strong>{{ stats.positive_ratio|ratio if stats else "-" }}</strong>
+      <div class="muted small-value">Negative {{ stats.negative_ratio|ratio if stats else "-" }}</div>
+    </article>
+    <article class="metric">
+      <span>{{ window }}d Stability Score</span>
+      <strong>{{ stats.stability_score if stats else "-" }}</strong>
+      <div class="muted small-value">{{ stats.data_quality.value if stats else "No data" }}</div>
+    </article>
+  {% endfor %}
+</section>
+
+<section class="panel">
+  <div class="section-header">
+    <h2>30d Funding History</h2>
+    <span class="muted">Zero line centered. Green is positive, red is negative.</span>
+  </div>
+  <div class="funding-chart">
+    <div class="zero-line"></div>
+    {% for point in history_chart %}
+      <div class="chart-bar-wrap" title="{{ point.time }} · {{ point.rate|rate }}">
+        <span class="chart-bar {% if point.positive %}positive-bar{% else %}negative-bar{% endif %}"
+              style="height: {{ point.height }}%;"></span>
+      </div>
+    {% else %}
+      <div class="empty-state">No funding history loaded yet.</div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel">
+  <div class="section-header">
+    <h2>Funding Events</h2>
+    <span class="muted">Realized Binance funding payments</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Funding Time</th>
+          <th>Rate</th>
+          <th>Mark Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for event in events %}
+          <tr>
+            <td class="small-value">{{ event.funding_time|utc }}</td>
+            <td class="{% if event.funding_rate > 0 %}positive{% elif event.funding_rate < 0 %}negative{% endif %}">
+              {{ event.funding_rate|rate }}
+            </td>
+            <td>{{ event.mark_price|decimal if event.mark_price else "-" }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="3" class="empty-state">No funding events loaded yet.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

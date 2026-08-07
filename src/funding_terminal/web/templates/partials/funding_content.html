@@ -1,0 +1,123 @@
+<section id="funding-content">
+  {% if message %}
+    <div class="alert success">{{ message }}</div>
+  {% endif %}
+  {% if error %}
+    <div class="alert error">{{ error }}</div>
+  {% endif %}
+
+  <section class="metric-grid compact">
+    <article class="metric">
+      <span>Tracked Symbols</span>
+      <strong>{{ summary.tracked }}</strong>
+    </article>
+    <article class="metric">
+      <span>Positive Current Funding</span>
+      <strong class="positive">{{ summary.current_positive }}</strong>
+    </article>
+    <article class="metric">
+      <span>Negative Current Funding</span>
+      <strong class="negative">{{ summary.current_negative }}</strong>
+    </article>
+    <article class="metric">
+      <span>History Synced</span>
+      <strong>{{ summary.history_synced }}</strong>
+    </article>
+    <article class="metric">
+      <span>Stale</span>
+      <strong>{{ summary.stale }}</strong>
+    </article>
+    <article class="metric">
+      <span>Last Sync</span>
+      <strong class="small-value">{{ summary.last_sync|utc }}</strong>
+    </article>
+  </section>
+
+  <section class="toolbar">
+    <form method="get" action="/funding" hx-get="/funding" hx-target="#funding-content"
+          hx-select="#funding-content" hx-push-url="true" class="filters funding-filters">
+      <select name="sort">
+        {% for item in ["stability", "mean", "positive_ratio", "cumulative", "estimate", "current_streak", "current", "updated", "base_asset"] %}
+          <option value="{{ item }}" {% if sort == item %}selected{% endif %}>
+            {{ item.replace("_", " ")|title }}
+          </option>
+        {% endfor %}
+      </select>
+      <select name="direction">
+        <option value="desc" {% if direction == "desc" %}selected{% endif %}>Descending</option>
+        <option value="asc" {% if direction == "asc" %}selected{% endif %}>Ascending</option>
+      </select>
+      <button class="button secondary" type="submit">Apply</button>
+    </form>
+  </section>
+
+  <div class="table-wrap">
+    <table class="funding-table">
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>Current/Last Funding</th>
+          <th>Next Funding</th>
+          <th>14d Mean</th>
+          <th>14d Median</th>
+          <th>14d Positive %</th>
+          <th>Current Positive Streak</th>
+          <th>14d Cumulative</th>
+          <th>14d Stability Score</th>
+          <th>30d Funding Estimate</th>
+          <th>30d Gross Funding Estimate</th>
+          <th>Data Quality</th>
+          <th>Last Updated</th>
+          <th>Trend</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          {% set current = row.current %}
+          {% set stats = row.statistics_14d %}
+          {% set stats30 = row.statistics_30d %}
+          <tr>
+            <td>
+              <a class="mono link" href="/funding/{{ row.base_asset }}">{{ row.base_asset }}</a>
+              <div class="muted small-value">{{ row.futures_symbol }}</div>
+            </td>
+            <td class="{% if current and current.last_funding_rate and current.last_funding_rate > 0 %}positive{% elif current and current.last_funding_rate and current.last_funding_rate < 0 %}negative{% endif %}">
+              {{ current.last_funding_rate|rate if current else "-" }}
+            </td>
+            <td class="small-value">{{ current.next_funding_time|utc if current else "-" }}</td>
+            <td>{{ stats.mean_rate|rate if stats else "-" }}</td>
+            <td>{{ stats.median_rate|rate if stats else "-" }}</td>
+            <td>{{ stats.positive_ratio|ratio if stats else "-" }}</td>
+            <td>{{ stats.current_positive_streak|streak(stats.funding_interval_hours) if stats else "-" }}</td>
+            <td>{{ stats.cumulative_rate|rate if stats else "-" }}</td>
+            <td>{{ stats.stability_score if stats else "-" }}</td>
+            <td>{{ stats30.estimated_30d_rate|rate if stats30 else "-" }}</td>
+            <td>{{ row.gross_funding_estimate_30d|money(quote_asset) if stats30 else "-" }}</td>
+            <td>
+              {% if stats %}
+                <span class="badge quality {{ stats.data_quality.value|lower }}">{{ stats.data_quality.value }}</span>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td class="small-value">{{ stats.calculated_at|utc if stats else "-" }}</td>
+            <td>
+              {% if stats %}
+                <span class="badge status">{{ stats.trend.value }}</span>
+                {% if stats.reversal_warning %}
+                  <span class="badge error">REVERSAL_RISK</span>
+                {% endif %}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="14" class="empty-state">No enabled eligible symbols with funding analytics yet.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>

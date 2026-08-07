@@ -26,7 +26,19 @@
       {% endfor %}
     </select>
     <select name="sort">
-      {% for item in ["base_asset", "eligible", "enabled", "mapping_status", "last_checked"] %}
+      {% for item in [
+        "funding_14d_stability",
+        "funding_14d_mean",
+        "funding_14d_positive_ratio",
+        "funding_14d_cumulative",
+        "funding_30d_estimate",
+        "current_positive_streak",
+        "base_asset",
+        "eligible",
+        "enabled",
+        "mapping_status",
+        "last_checked"
+      ] %}
         <option value="{{ item }}" {% if sort == item %}selected{% endif %}>
           {{ item.replace("_", " ")|title }}
         </option>
@@ -42,4 +54,3 @@
 
 {% include "partials/symbol_table.html" %}
 {% endblock %}
-

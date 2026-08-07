@@ -11,11 +11,11 @@ if not exist "%PYTHON_EXE%" (
     exit /b 1
 )
 
-"%PYTHON_EXE%" scripts\runtime_manager.py start
+"%PYTHON_EXE%" scripts\runtime_manager.py restart
 
 if errorlevel 1 (
     echo.
-    echo START FAILED
+    echo Operation failed.
     pause
     exit /b 1
 )
