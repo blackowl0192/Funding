@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Funding Arbitrage Terminal{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <div>
+    <p class="eyebrow">Local Binance research workspace</p>
+    <h1>Funding Arbitrage Terminal</h1>
+  </div>
+  <div class="header-actions">
+    <a class="button" href="/import">Upload Universe</a>
+    <a class="button secondary" href="/symbols">Symbols</a>
+    <a class="button secondary" href="/settings">Settings</a>
+  </div>
+</header>
+
+<section class="status-grid">
+  <article class="metric">
+    <span>Database</span>
+    <strong class="badge {{ database_status }}">{{ database_status|upper }}</strong>
+  </article>
+  <article class="metric">
+    <span>Binance Spot API</span>
+    <strong class="badge {{ spot_status }}">{{ spot_status|upper }}</strong>
+  </article>
+  <article class="metric">
+    <span>Binance Futures API</span>
+    <strong class="badge {{ futures_status }}">{{ futures_status|upper }}</strong>
+  </article>
+</section>
+
+<section class="metric-grid">
+  <article class="metric">
+    <span>Total imported assets</span>
+    <strong>{{ stats.total_symbols }}</strong>
+  </article>
+  <article class="metric">
+    <span>Eligible assets</span>
+    <strong class="positive">{{ stats.eligible_symbols }}</strong>
+  </article>
+  <article class="metric">
+    <span>Enabled assets</span>
+    <strong>{{ stats.enabled_symbols }}</strong>
+  </article>
+  <article class="metric">
+    <span>Rejected assets</span>
+    <strong class="negative">{{ stats.rejected_symbols }}</strong>
+  </article>
+  <article class="metric">
+    <span>Total Capital</span>
+    <strong>{{ stats.settings.total_capital|decimal }} {{ stats.settings.quote_asset }}</strong>
+  </article>
+  <article class="metric">
+    <span>Last import time</span>
+    <strong class="small-value">{{ stats.last_import_at or "Never" }}</strong>
+  </article>
+</section>
+
+<section class="metric-grid">
+  <article class="metric">
+    <span>Spot Budget</span>
+    <strong>{{ stats.settings.spot_budget|decimal }} {{ stats.settings.quote_asset }}</strong>
+  </article>
+  <article class="metric">
+    <span>Futures Margin Budget</span>
+    <strong>{{ stats.settings.futures_margin_budget|decimal }} {{ stats.settings.quote_asset }}</strong>
+  </article>
+  <article class="metric">
+    <span>Free Reserve</span>
+    <strong>{{ stats.settings.free_reserve|decimal }} {{ stats.settings.quote_asset }}</strong>
+  </article>
+  <article class="metric">
+    <span>Leverage</span>
+    <strong>{{ stats.settings.futures_leverage }}x</strong>
+  </article>
+  <article class="metric">
+    <span>Max Hedged Notional</span>
+    <strong>{{ stats.settings.max_hedged_notional|decimal }} {{ stats.settings.quote_asset }}</strong>
+  </article>
+  <article class="metric">
+    <span>Fee Discount</span>
+    <strong>{{ stats.settings.fee_discount_rate|percent }}%</strong>
+  </article>
+  <article class="metric">
+    <span>Effective Spot Taker</span>
+    <strong>{{ stats.settings.effective_spot_taker_fee|percent }}%</strong>
+  </article>
+  <article class="metric">
+    <span>Effective Futures Taker</span>
+    <strong>{{ stats.settings.effective_futures_taker_fee|percent }}%</strong>
+  </article>
+</section>
+{% endblock %}

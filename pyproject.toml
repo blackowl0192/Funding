@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "funding-arbitrage-terminal"
+version = "0.1.0"
+description = "Local analytics terminal for Binance spot plus USDT-M perpetual universe research."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "asyncpg>=0.30.0",
+    "fastapi>=0.116.0",
+    "httpx>=0.28.0",
+    "jinja2>=3.1.0",
+    "openpyxl>=3.1.0",
+    "pydantic>=2.11.0",
+    "pydantic-settings>=2.10.0",
+    "python-multipart>=0.0.20",
+    "uvicorn>=0.35.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.17.0",
+    "pytest>=8.4.0",
+    "pytest-asyncio>=1.1.0",
+    "ruff>=0.12.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+funding_terminal = ["web/templates/**/*.html", "web/static/*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "C4", "SIM"]
+ignore = ["B008"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.mypy]
+python_version = "3.14"
+mypy_path = "src"
+packages = ["funding_terminal"]
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+

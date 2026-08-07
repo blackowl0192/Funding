@@ -1,0 +1,92 @@
+{% if message %}
+  <div class="alert success">{{ message }}</div>
+{% endif %}
+{% if error %}
+  <div class="alert error">{{ error }}</div>
+{% endif %}
+
+<form class="settings-form" method="post" action="/settings" data-settings-form
+      hx-post="/settings" hx-target="closest .panel" hx-swap="innerHTML">
+  <section class="settings-section">
+    <h2>Capital</h2>
+    <div class="form-grid">
+      <label>
+        <span>Total Capital (USDT)</span>
+        <input name="total_capital" type="number" step="0.00000001"
+               value="{{ settings.total_capital|decimal }}" required>
+      </label>
+      <label>
+        <span>Spot Budget (USDT)</span>
+        <input name="spot_budget" type="number" step="0.00000001"
+               value="{{ settings.spot_budget|decimal }}" required>
+      </label>
+      <label>
+        <span>Futures Margin Budget (USDT)</span>
+        <input name="futures_margin_budget" type="number" step="0.00000001"
+               value="{{ settings.futures_margin_budget|decimal }}" required>
+      </label>
+      <label>
+        <span>Quote Asset</span>
+        <input name="quote_asset" value="{{ settings.quote_asset }}" required>
+      </label>
+    </div>
+
+    <fieldset class="segmented">
+      <legend>Futures Leverage</legend>
+      {% for leverage in [1, 2] %}
+        <label>
+          <input type="radio" name="futures_leverage" value="{{ leverage }}"
+                 {% if settings.futures_leverage == leverage %}checked{% endif %}>
+          <span>{{ leverage }}x</span>
+        </label>
+      {% endfor %}
+    </fieldset>
+
+    <div class="derived-grid">
+      <div><span>Free Reserve</span><strong data-derived="free_reserve">{{ settings.free_reserve|decimal }}</strong></div>
+      <div><span>Maximum Futures Notional</span><strong data-derived="max_futures_notional">{{ settings.max_futures_notional|decimal }}</strong></div>
+      <div><span>Maximum Hedged Notional</span><strong data-derived="max_hedged_notional">{{ settings.max_hedged_notional|decimal }}</strong></div>
+      <div><span>Capital Utilization</span><strong data-derived="capital_utilization_ratio">{{ settings.capital_utilization_ratio|percent }}%</strong></div>
+    </div>
+  </section>
+
+  <section class="settings-section">
+    <h2>Fees</h2>
+    <div class="form-grid">
+      <label>
+        <span>Spot Maker Base Fee %</span>
+        <input name="spot_maker_base_fee" type="number" step="0.000001"
+               value="{{ settings.spot_maker_base_fee|percent }}" required>
+      </label>
+      <label>
+        <span>Spot Taker Base Fee %</span>
+        <input name="spot_taker_base_fee" type="number" step="0.000001"
+               value="{{ settings.spot_taker_base_fee|percent }}" required>
+      </label>
+      <label>
+        <span>Futures Maker Base Fee %</span>
+        <input name="futures_maker_base_fee" type="number" step="0.000001"
+               value="{{ settings.futures_maker_base_fee|percent }}" required>
+      </label>
+      <label>
+        <span>Futures Taker Base Fee %</span>
+        <input name="futures_taker_base_fee" type="number" step="0.000001"
+               value="{{ settings.futures_taker_base_fee|percent }}" required>
+      </label>
+      <label>
+        <span>Fee Discount %</span>
+        <input name="fee_discount" type="number" step="0.000001"
+               value="{{ settings.fee_discount_rate|percent }}" required>
+      </label>
+    </div>
+
+    <div class="derived-grid">
+      <div><span>Effective Spot Maker %</span><strong data-derived="effective_spot_maker_fee">{{ settings.effective_spot_maker_fee|percent }}%</strong></div>
+      <div><span>Effective Spot Taker %</span><strong data-derived="effective_spot_taker_fee">{{ settings.effective_spot_taker_fee|percent }}%</strong></div>
+      <div><span>Effective Futures Maker %</span><strong data-derived="effective_futures_maker_fee">{{ settings.effective_futures_maker_fee|percent }}%</strong></div>
+      <div><span>Effective Futures Taker %</span><strong data-derived="effective_futures_taker_fee">{{ settings.effective_futures_taker_fee|percent }}%</strong></div>
+    </div>
+  </section>
+
+  <button class="button" type="submit">Save Settings</button>
+</form>

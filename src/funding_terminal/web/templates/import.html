@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Import | Funding Arbitrage Terminal{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <div>
+    <p class="eyebrow">Manual universe import</p>
+    <h1>Upload Universe</h1>
+  </div>
+</header>
+
+<section class="panel">
+  <form class="upload-form" method="post" action="/import" enctype="multipart/form-data"
+        hx-post="/import" hx-target="#import-result" hx-swap="innerHTML">
+    <label class="drop-zone" for="file-input">
+      <input id="file-input" name="file" type="file" accept=".csv,.xlsx" required>
+      <span class="drop-title">Drop CSV or XLSX here</span>
+      <span class="drop-subtitle">Supported columns: Symbol, optional Enabled</span>
+    </label>
+    <button class="button" type="submit">Upload Universe</button>
+  </form>
+</section>
+
+<section id="import-result">
+  {% include "partials/import_result.html" %}
+</section>
+{% endblock %}
+

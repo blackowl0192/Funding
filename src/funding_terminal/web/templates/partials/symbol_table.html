@@ -1,0 +1,89 @@
+<section id="symbols-table">
+  {% if message %}
+    <div class="alert success">{{ message }}</div>
+  {% endif %}
+  {% if error %}
+    <div class="alert error">{{ error }}</div>
+  {% endif %}
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Enabled</th>
+          <th>Base Asset</th>
+          <th>Spot Symbol</th>
+          <th>Spot Status</th>
+          <th>Futures Symbol</th>
+          <th>Futures Status</th>
+          <th>Eligible</th>
+          <th>Mapping Status</th>
+          <th>Reason</th>
+          <th>Last Checked</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in symbols.entries %}
+          <tr class="{% if not entry.enabled %}disabled-row{% endif %}">
+            <td>
+              <span class="badge {% if entry.enabled %}ok{% else %}disabled{% endif %}">
+                {{ "ON" if entry.enabled else "OFF" }}
+              </span>
+            </td>
+            <td class="mono">{{ entry.base_asset }}</td>
+            <td>{{ entry.spot_symbol or "-" }}</td>
+            <td>{{ entry.spot_status or "-" }}</td>
+            <td>{{ entry.futures_symbol or "-" }}</td>
+            <td>{{ entry.futures_status or "-" }}</td>
+            <td>
+              <span class="badge {% if entry.strategy_eligible %}ok{% else %}error{% endif %}">
+                {{ "YES" if entry.strategy_eligible else "NO" }}
+              </span>
+            </td>
+            <td><span class="badge status">{{ entry.mapping_status.value }}</span></td>
+            <td class="reason">{{ entry.mapping_reason }}</td>
+            <td class="small-value">{{ entry.last_checked_at or "-" }}</td>
+            <td class="actions">
+              {% if entry.enabled %}
+                <form method="post" action="/symbols/{{ entry.base_asset }}/disable"
+                      hx-post="/symbols/{{ entry.base_asset }}/disable"
+                      hx-target="#symbols-table" hx-swap="outerHTML">
+                  <button class="icon-button" type="submit" title="Disable">Disable</button>
+                </form>
+              {% else %}
+                <form method="post" action="/symbols/{{ entry.base_asset }}/enable"
+                      hx-post="/symbols/{{ entry.base_asset }}/enable"
+                      hx-target="#symbols-table" hx-swap="outerHTML">
+                  <button class="icon-button" type="submit" title="Enable">Enable</button>
+                </form>
+              {% endif %}
+              <form method="post" action="/symbols/{{ entry.base_asset }}/refresh"
+                    hx-post="/symbols/{{ entry.base_asset }}/refresh"
+                    hx-target="#symbols-table" hx-swap="outerHTML">
+                <button class="icon-button" type="submit" title="Refresh">Refresh</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="11" class="empty-state">No symbols imported yet.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <footer class="pagination">
+    <span>Page {{ symbols.page }} of {{ symbols.total_pages }} · {{ symbols.total }} rows</span>
+    <div>
+      {% if symbols.has_previous %}
+        <a class="button secondary" href="/symbols?page={{ symbols.page - 1 }}">Previous</a>
+      {% endif %}
+      {% if symbols.has_next %}
+        <a class="button secondary" href="/symbols?page={{ symbols.page + 1 }}">Next</a>
+      {% endif %}
+    </div>
+  </footer>
+</section>
+

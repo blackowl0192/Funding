@@ -1,0 +1,28 @@
+from __future__ import annotations
+
+from enum import StrEnum
+
+
+class MappingStatus(StrEnum):
+    MATCHED = "MATCHED"
+    SPOT_MISSING = "SPOT_MISSING"
+    FUTURES_MISSING = "FUTURES_MISSING"
+    SPOT_INACTIVE = "SPOT_INACTIVE"
+    FUTURES_INACTIVE = "FUTURES_INACTIVE"
+    UNSUPPORTED_SPOT = "UNSUPPORTED_SPOT"
+    UNSUPPORTED_FUTURES = "UNSUPPORTED_FUTURES"
+    METADATA_MISMATCH = "METADATA_MISMATCH"
+    INVALID_INPUT = "INVALID_INPUT"
+    ERROR = "ERROR"
+
+
+class ExecutionMode(StrEnum):
+    MAKER = "MAKER"
+    TAKER = "TAKER"
+    MIXED = "MIXED"
+
+
+class ImportRunStatus(StrEnum):
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Settings | Funding Arbitrage Terminal{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <div>
+    <p class="eyebrow">Capital and fee assumptions</p>
+    <h1>Settings</h1>
+  </div>
+</header>
+
+<section class="panel narrow">
+  {% include "partials/settings_form.html" %}
+</section>
+{% endblock %}
+

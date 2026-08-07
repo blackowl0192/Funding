@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Funding Arbitrage Terminal{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+  <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+  <script src="{{ url_for('static', path='/app.js') }}" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/">
+        <span class="brand-mark">FA</span>
+        <span>
+          <strong>Funding Arbitrage</strong>
+          <small>Stage 1 Terminal</small>
+        </span>
+      </a>
+      <nav class="nav">
+        <a class="{% if active == 'dashboard' %}active{% endif %}" href="/">Dashboard</a>
+        <a class="{% if active == 'import' %}active{% endif %}" href="/import">Upload Universe</a>
+        <a class="{% if active == 'symbols' %}active{% endif %}" href="/symbols">Symbols</a>
+        <a class="{% if active == 'settings' %}active{% endif %}" href="/settings">Settings</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>
+

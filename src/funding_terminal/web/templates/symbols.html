@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Symbols | Funding Arbitrage Terminal{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <div>
+    <p class="eyebrow">Saved Binance metadata</p>
+    <h1>Symbols</h1>
+  </div>
+  <form method="post" action="/symbols/refresh-all"
+        hx-post="/symbols/refresh-all" hx-target="#symbols-table" hx-swap="outerHTML">
+    <button class="button" type="submit">Refresh Binance Metadata</button>
+  </form>
+</header>
+
+<section class="toolbar">
+  <form method="get" action="/symbols" hx-get="/symbols" hx-target="#symbols-table"
+        hx-push-url="true" class="filters">
+    <input name="search" placeholder="Search base asset" value="{{ search }}">
+    <select name="filter">
+      {% for item in ["all", "eligible", "rejected", "enabled", "disabled"] %}
+        <option value="{{ item }}" {% if filter_name == item %}selected{% endif %}>
+          {{ item|capitalize }}
+        </option>
+      {% endfor %}
+    </select>
+    <select name="sort">
+      {% for item in ["base_asset", "eligible", "enabled", "mapping_status", "last_checked"] %}
+        <option value="{{ item }}" {% if sort == item %}selected{% endif %}>
+          {{ item.replace("_", " ")|title }}
+        </option>
+      {% endfor %}
+    </select>
+    <select name="direction">
+      <option value="asc" {% if direction == "asc" %}selected{% endif %}>Ascending</option>
+      <option value="desc" {% if direction == "desc" %}selected{% endif %}>Descending</option>
+    </select>
+    <button class="button secondary" type="submit">Apply</button>
+  </form>
+</section>
+
+{% include "partials/symbol_table.html" %}
+{% endblock %}
+
